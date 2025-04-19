@@ -11,4 +11,4 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY src ./src
 ENV PORT=2000 HOST=0.0.0.0 CORS_ORIGIN=*
 EXPOSE 2000
-CMD ["node", "src/index.js"]
+CMD ["node", "src/index.ts"]
