@@ -1,14 +1,25 @@
-# Stage 1: dependencies
-FROM node:20-alpine AS deps
+FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build   # assuming "build": "tsc" in package.json
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+COPY package.json package-lock.json ./
 RUN npm ci --production
 
-# Stage 2: build image
-FROM node:20-alpine
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY src ./src
-ENV PORT=2000 HOST=0.0.0.0 CORS_ORIGIN=*
+COPY --from=builder /app/dist ./dist
+
+ENV PORT=2000 \
+    HOST=0.0.0.0 \
+    CORS_ORIGIN=*
+
 EXPOSE 2000
-CMD ["node", "src/index.ts"]
+
+CMD ["node", "dist/index.js"]
