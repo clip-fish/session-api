@@ -1,0 +1,45 @@
+# session-api/docker-compose.yml
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: session-api-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    # build locally
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # pull published image
+#     image: ghcr.io/clip-fish/session-api:master
+
+    container_name: session-api-app
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "2000:2000"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/session-api
+      PORT:      2000
+      HOST:      0.0.0.0
+      CORS_ORIGIN: "*"
+
+volumes:
+  mongo-data:
+
+networks:
+  default:
+    driver: bridge
